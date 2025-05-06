@@ -12,6 +12,7 @@ export class Game {
     this.gameOverElement = document.getElementById('gameOver');
     this.finalScoreElement = document.getElementById('finalScore');
     this.controlsElement = document.getElementById('controls');
+    this.startButtonElement = document.getElementById('startButton');
     
     // Game dimensions
     this.width = 600;
@@ -57,6 +58,7 @@ export class Game {
     this.gameLoop = this.gameLoop.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
+    this.startGame = this.startGame.bind(this);
   }
   
   init() {
@@ -74,11 +76,36 @@ export class Game {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
     
+    // Add start button event listener
+    if (this.startButtonElement) {
+      this.startButtonElement.addEventListener('click', this.startGame);
+      this.startButtonElement.classList.remove('hidden');
+    }
+    
     // Load sounds
     this.soundManager.init();
     
-    // Start game loop
+    // Start game loop but don't start the actual game yet
     requestAnimationFrame(this.gameLoop);
+  }
+  
+  startGame() {
+    if (!this.gameStarted) {
+      this.gameStarted = true;
+      
+      // Hide start button
+      if (this.startButtonElement) {
+        this.startButtonElement.classList.add('hidden');
+      }
+      
+      // Hide controls after a short delay
+      setTimeout(() => {
+        this.hideControls();
+      }, 1000);
+      
+      // Start background music
+      this.soundManager.playBackgroundMusic();
+    }
   }
   
   createStars(count) {
@@ -131,13 +158,16 @@ export class Game {
     const deltaTime = timestamp - this.lastTime;
     this.lastTime = timestamp;
     
-    if (!this.isPaused && !this.isGameOver) {
-      // Clear canvas
-      this.ctx.clearRect(0, 0, this.width, this.height);
-      
-      // Draw background
-      this.drawBackground(deltaTime);
-      
+    // Clear canvas
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    
+    // Draw background
+    this.drawBackground(deltaTime);
+    
+    if (!this.gameStarted) {
+      // Draw title screen
+      this.drawTitleScreen();
+    } else if (!this.isPaused && !this.isGameOver) {
       // Update and draw player
       this.player.update(deltaTime);
       this.player.draw();
@@ -166,6 +196,38 @@ export class Game {
     
     // Request next frame
     requestAnimationFrame(this.gameLoop);
+  }
+  
+  drawTitleScreen() {
+    // Draw game title
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 40px "Press Start 2P", monospace';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('NEO SPACE', this.width / 2, this.height / 3 - 30);
+    this.ctx.fillText('INVADERS', this.width / 2, this.height / 3 + 30);
+    this.ctx.fillText('2025', this.width / 2, this.height / 3 + 90);
+    
+    // Draw subtitle
+    this.ctx.font = '16px "Press Start 2P", monospace';
+    this.ctx.fillText('CLICK START OR PRESS ENTER TO PLAY', this.width / 2, this.height / 2 + 50);
+    
+    // Draw a pulsing effect around the title
+    const time = Date.now() / 1000;
+    const pulseSize = 150 + Math.sin(time * 2) * 20;
+    
+    const gradient = this.ctx.createRadialGradient(
+      this.width / 2, this.height / 3, 10,
+      this.width / 2, this.height / 3, pulseSize
+    );
+    
+    gradient.addColorStop(0, 'rgba(110, 68, 255, 0.3)');
+    gradient.addColorStop(0.5, 'rgba(5, 255, 161, 0.1)');
+    gradient.addColorStop(1, 'rgba(255, 42, 109, 0)');
+    
+    this.ctx.fillStyle = gradient;
+    this.ctx.beginPath();
+    this.ctx.arc(this.width / 2, this.height / 3, pulseSize, 0, Math.PI * 2);
+    this.ctx.fill();
   }
   
   drawBackground(deltaTime) {
@@ -337,37 +399,132 @@ export class Game {
     this.ctx.globalAlpha = 1;
   }
   
+  // Find invaders that are connected to the given invader
+  findConnectedInvaders(invader, visited = new Set()) {
+    // Mark this invader as visited
+    visited.add(invader);
+    
+    // Find all invaders that are close enough to be considered "connected"
+    const connectedDistance = invader.width + this.invaderPadding / 2;
+    
+    this.invaders.forEach(otherInvader => {
+      if (otherInvader !== invader && !visited.has(otherInvader)) {
+        // Calculate distance between invaders
+        const dx = otherInvader.x + otherInvader.width / 2 - (invader.x + invader.width / 2);
+        const dy = otherInvader.y + otherInvader.height / 2 - (invader.y + invader.height / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // If they're close enough, they're connected
+        if (distance < connectedDistance) {
+          // Recursively find invaders connected to this one
+          this.findConnectedInvaders(otherInvader, visited);
+        }
+      }
+    });
+    
+    return visited;
+  }
+  
+  // Trigger chain reaction explosion
+  triggerChainReaction(invader) {
+    // Find all connected invaders
+    const connectedInvaders = this.findConnectedInvaders(invader);
+    
+    // Create a copy of the invaders array to avoid modification during iteration
+    const invadersCopy = [...this.invaders];
+    
+    // Remove all connected invaders and create explosions
+    connectedInvaders.forEach(connectedInvader => {
+      // Find the index in the original array
+      const index = this.invaders.indexOf(connectedInvader);
+      if (index !== -1) {
+        // Remove from the original array
+        this.invaders.splice(index, 1);
+        
+        // Create explosion particles
+        let color;
+        switch (connectedInvader.type) {
+          case 0: color = '#ff2a6d'; break;
+          case 1: color = '#05ffa1'; break;
+          case 2: color = '#6e44ff'; break;
+        }
+        
+        this.createExplosionParticles(
+          connectedInvader.x + connectedInvader.width / 2,
+          connectedInvader.y + connectedInvader.height / 2,
+          color,
+          30
+        );
+        
+        // Increase score
+        this.score += (3 - connectedInvader.type) * 10 + 10;
+        
+        // Add bonus for chain reaction
+        if (connectedInvader !== invader) {
+          this.score += 15; // Bonus points for chain reaction
+        }
+        
+        // Play explosion sound (with slight delay for chain effect)
+        setTimeout(() => {
+          this.soundManager.play('invaderExplode');
+        }, Math.random() * 200);
+      }
+    });
+    
+    // If all invaders are destroyed, create new wave
+    if (this.invaders.length === 0) {
+      this.createInvaders();
+      this.invaderMoveInterval = Math.max(200, this.invaderMoveInterval - 100);
+      this.invaderShootChance += 0.002;
+    }
+  }
+  
   checkCollisions() {
     // Check player projectiles vs invaders
     this.playerProjectiles.forEach((projectile, pIndex) => {
-      this.invaders.forEach((invader, iIndex) => {
+      let projectileRemoved = false;
+      
+      for (let i = 0; i < this.invaders.length; i++) {
+        const invader = this.invaders[i];
+        
         if (this.checkCollision(projectile, invader)) {
-          // Remove projectile
-          this.playerProjectiles.splice(pIndex, 1);
-          
-          // Create explosion particles
-          let color;
-          switch (invader.type) {
-            case 0: color = '#ff2a6d'; break;
-            case 1: color = '#05ffa1'; break;
-            case 2: color = '#6e44ff'; break;
+          // Remove projectile if we haven't already
+          if (!projectileRemoved) {
+            this.playerProjectiles.splice(pIndex, 1);
+            projectileRemoved = true;
           }
           
-          this.createExplosionParticles(
-            invader.x + invader.width / 2,
-            invader.y + invader.height / 2,
-            color,
-            30
-          );
-          
-          // Remove invader
-          this.invaders.splice(iIndex, 1);
-          
-          // Increase score
-          this.score += (3 - invader.type) * 10 + 10;
-          
-          // Play explosion sound
-          this.soundManager.play('invaderExplode');
+          // Check if this is an explosive invader
+          if (invader.isExplosive) {
+            // Trigger chain reaction
+            this.triggerChainReaction(invader);
+          } else {
+            // Regular invader explosion
+            // Create explosion particles
+            let color;
+            switch (invader.type) {
+              case 0: color = '#ff2a6d'; break;
+              case 1: color = '#05ffa1'; break;
+              case 2: color = '#6e44ff'; break;
+            }
+            
+            this.createExplosionParticles(
+              invader.x + invader.width / 2,
+              invader.y + invader.height / 2,
+              color,
+              30
+            );
+            
+            // Remove invader
+            this.invaders.splice(i, 1);
+            i--; // Adjust index after removal
+            
+            // Increase score
+            this.score += (3 - invader.type) * 10 + 10;
+            
+            // Play explosion sound
+            this.soundManager.play('invaderExplode');
+          }
           
           // If all invaders are destroyed, create new wave
           if (this.invaders.length === 0) {
@@ -375,8 +532,13 @@ export class Game {
             this.invaderMoveInterval = Math.max(200, this.invaderMoveInterval - 100);
             this.invaderShootChance += 0.002;
           }
+          
+          // If the projectile is removed, we can't hit any more invaders with it
+          if (projectileRemoved) {
+            break;
+          }
         }
-      });
+      }
     });
     
     // Check invader projectiles vs player
@@ -426,6 +588,7 @@ export class Game {
     if (this.lives <= 0) {
       this.isGameOver = true;
       this.soundManager.play('gameOver');
+      this.soundManager.stopBackgroundMusic();
     }
     
     if (this.isGameOver) {
@@ -440,53 +603,53 @@ export class Game {
   }
   
   handleKeyDown(e) {
-    // If this is the first key press, hide the controls
-    if (!this.gameStarted) {
-      this.gameStarted = true;
-      this.hideControls();
+    // Start game with Enter key
+    if (!this.gameStarted && e.code === 'Enter') {
+      this.startGame();
+      return;
     }
     
+    // If game is over, restart with Space
     if (this.isGameOver && e.code === 'Space') {
       this.resetGame();
       return;
     }
     
-    switch (e.code) {
-      case 'ArrowLeft':
-        this.player.moveLeft = true;
-        break;
-      case 'ArrowRight':
-        this.player.moveRight = true;
-        break;
-      case 'Space':
-        this.playerShoot();
-        break;
-      case 'KeyP':
-        this.togglePause();
-        break;
+    // Only process movement if game has started
+    if (this.gameStarted) {
+      switch (e.code) {
+        case 'ArrowLeft':
+          this.player.moveLeft = true;
+          break;
+        case 'ArrowRight':
+          this.player.moveRight = true;
+          break;
+        case 'Space':
+          this.playerShoot();
+          break;
+        case 'KeyP':
+          this.togglePause();
+          break;
+      }
     }
   }
   
   handleKeyUp(e) {
-    switch (e.code) {
-      case 'ArrowLeft':
-        this.player.moveLeft = false;
-        break;
-      case 'ArrowRight':
-        this.player.moveRight = false;
-        break;
+    if (this.gameStarted) {
+      switch (e.code) {
+        case 'ArrowLeft':
+          this.player.moveLeft = false;
+          break;
+        case 'ArrowRight':
+          this.player.moveRight = false;
+          break;
+      }
     }
   }
   
   playerShoot() {
-    // If this is the first shot, hide the controls
-    if (!this.gameStarted) {
-      this.gameStarted = true;
-      this.hideControls();
-    }
-    
-    // Limit shooting rate
-    if (this.player.canShoot && !this.isPaused && !this.isGameOver) {
+    // Only allow shooting if game has started
+    if (this.gameStarted && this.player.canShoot && !this.isPaused && !this.isGameOver) {
       this.playerProjectiles.push(
         new Projectile(
           this.player.x + this.player.width / 2,
@@ -518,7 +681,16 @@ export class Game {
   }
   
   togglePause() {
-    this.isPaused = !this.isPaused;
+    if (this.gameStarted) {
+      this.isPaused = !this.isPaused;
+      
+      // Pause/resume background music
+      if (this.isPaused) {
+        this.soundManager.pauseBackgroundMusic();
+      } else {
+        this.soundManager.resumeBackgroundMusic();
+      }
+    }
   }
   
   resetGame() {
@@ -544,5 +716,8 @@ export class Game {
     
     // Hide game over screen
     this.gameOverElement.classList.add('hidden');
+    
+    // Restart background music
+    this.soundManager.playBackgroundMusic();
   }
 }

@@ -9,6 +9,9 @@ export class Invader {
     this.animationFrame = 0;
     this.animationTimer = 0;
     
+    // Explosive invader property - increase chance to 30% (6 bombs per 20 invaders)
+    this.isExplosive = Math.random() < 0.30; // 30% chance to be explosive
+    
     // Modern design properties
     this.glowIntensity = 0.3 + Math.random() * 0.2;
     this.glowDirection = 0.01 + Math.random() * 0.01;
@@ -95,8 +98,67 @@ export class Invader {
       this.drawBasicInvader(hoverY);
     }
     
+    // Draw bomb indicator for explosive invaders
+    if (this.isExplosive) {
+      this.drawBombIndicator(hoverY);
+    }
+    
     // Restore context
     this.ctx.restore();
+  }
+  
+  drawBombIndicator(hoverY) {
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2 + hoverY;
+    
+    // Pulsing effect for the bomb
+    const pulseScale = 1 + Math.sin(this.hoverOffset * 2) * 0.2;
+    
+    // Draw bomb body
+    this.ctx.fillStyle = '#ff9e00';
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, 6 * pulseScale, 0, Math.PI * 2);
+    this.ctx.fill();
+    
+    // Draw bomb fuse
+    this.ctx.strokeStyle = '#ffffff';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.moveTo(centerX, centerY - 6 * pulseScale);
+    
+    // Curly fuse with animation
+    const fuseOffset = Math.sin(this.hoverOffset * 3) * 2;
+    this.ctx.bezierCurveTo(
+      centerX + 5, centerY - 8 * pulseScale,
+      centerX - 2 + fuseOffset, centerY - 12 * pulseScale,
+      centerX + 3, centerY - 14 * pulseScale
+    );
+    this.ctx.stroke();
+    
+    // Draw spark at the end of the fuse
+    if (this.animationFrame === 1) {
+      this.ctx.fillStyle = '#ffffff';
+    } else {
+      this.ctx.fillStyle = '#ff9e00';
+    }
+    this.ctx.beginPath();
+    this.ctx.arc(centerX + 3, centerY - 14 * pulseScale, 1.5, 0, Math.PI * 2);
+    this.ctx.fill();
+    
+    // Draw warning symbol
+    this.ctx.fillStyle = '#000000';
+    this.ctx.beginPath();
+    this.ctx.moveTo(centerX - 3 * pulseScale, centerY - 1 * pulseScale);
+    this.ctx.lineTo(centerX + 3 * pulseScale, centerY - 1 * pulseScale);
+    this.ctx.lineTo(centerX, centerY + 3 * pulseScale);
+    this.ctx.closePath();
+    this.ctx.fill();
+    
+    // Draw exclamation mark
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY - 1 * pulseScale, 1, 0, Math.PI * 2);
+    this.ctx.fill();
   }
   
   drawEliteInvader(hoverY) {

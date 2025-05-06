@@ -1,84 +1,59 @@
 :root {
-  --primary: #6e44ff;
-  --secondary: #00eeff;
-  --accent: #ff2a6d;
-  --background: #0a0b1a;
-  --text: #ffffff;
-  --success: #05ffa1;
-  --warning: #ffb800;
-  --danger: #ff2a6d;
-  --dark: #0a0b1a;
-  --light: #f0f2ff;
-  
-  font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+  font-family: 'Press Start 2P', system-ui, monospace;
   line-height: 1.5;
   font-weight: 400;
-  color: var(--text);
-  background-color: var(--background);
   
-  /* Modern smooth scrolling */
-  scroll-behavior: smooth;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #000;
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
 body {
   margin: 0;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--dark) 0%, #1a1b3a 100%);
+  background: #000;
 }
 
 #app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
-canvas {
-  border-radius: 12px;
-  background-color: rgba(10, 11, 26, 0.8);
-  box-shadow: 0 0 30px rgba(110, 68, 255, 0.2), 
-              0 0 60px rgba(0, 238, 255, 0.1);
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(110, 68, 255, 0.3);
-  transition: all 0.3s ease;
-}
-
-canvas:focus {
-  box-shadow: 0 0 40px rgba(110, 68, 255, 0.4), 
-              0 0 80px rgba(0, 238, 255, 0.2);
+#gameCanvas {
+  border: 2px solid rgba(110, 68, 255, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(110, 68, 255, 0.3),
+              0 0 40px rgba(5, 255, 161, 0.2),
+              0 0 80px rgba(255, 42, 109, 0.1);
 }
 
 #score, #lives {
   position: absolute;
-  top: 20px;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text);
-  background: rgba(10, 11, 26, 0.7);
-  backdrop-filter: blur(10px);
-  padding: 8px 16px;
-  border-radius: 30px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-  z-index: 5;
-  letter-spacing: 0.5px;
+  top: 2.5rem;
+  font-size: 1rem;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(5, 255, 161, 0.8);
+  z-index: 10;
 }
 
 #score {
-  left: 20px;
-  border-left: 3px solid var(--success);
+  left: calc(50% - 280px);
 }
 
 #lives {
-  right: 20px;
-  border-right: 3px solid var(--accent);
+  right: calc(50% - 280px);
 }
 
 #gameOver {
@@ -86,65 +61,78 @@ canvas:focus {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 28px;
-  color: var(--text);
-  text-align: center;
-  background: rgba(10, 11, 26, 0.85);
-  backdrop-filter: blur(10px);
-  padding: 30px 40px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-  border: 1px solid rgba(255, 42, 109, 0.3);
-  animation: pulse 2s infinite;
-  width: 60%;
-  max-width: 400px;
+  background: rgba(10, 11, 26, 0.9);
+  padding: 2rem;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 42, 109, 0.8);
+  box-shadow: 0 0 20px rgba(255, 42, 109, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  z-index: 100;
 }
 
 #gameOver h2 {
-  margin: 0 0 20px 0;
-  font-size: 36px;
-  background: linear-gradient(90deg, var(--accent), var(--secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-weight: 700;
+  color: #ff2a6d;
+  margin: 0;
+  font-size: 2rem;
+  text-shadow: 0 0 10px rgba(255, 42, 109, 0.8);
 }
 
 #finalScore {
-  display: block;
-  font-size: 24px;
-  margin: 20px 0;
-  color: var(--success);
-  font-weight: 500;
+  font-size: 1.2rem;
+  color: #05ffa1;
 }
 
 #restartTip {
-  display: block;
-  font-size: 16px;
-  margin-top: 20px;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 400;
+  font-size: 0.8rem;
+  margin-top: 1rem;
+}
+
+.key {
+  display: inline-block;
+  background: rgba(110, 68, 255, 0.3);
+  border: 1px solid rgba(110, 68, 255, 0.8);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  margin: 0 0.2rem;
+  font-size: 0.8rem;
+  box-shadow: 0 0 5px rgba(110, 68, 255, 0.5);
+}
+
+#controls {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(10, 11, 26, 0.7);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(5, 255, 161, 0.5);
+  z-index: 10;
+}
+
+.control {
+  font-size: 0.8rem;
 }
 
 .hidden {
   display: none !important;
 }
 
-/* Modern animations */
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 42, 109, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 15px rgba(255, 42, 109, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 42, 109, 0);
-  }
+.fade-out {
+  animation: fadeOut 0.5s forwards;
 }
 
-/* Particle container */
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 #particles {
   position: fixed;
   top: 0;
@@ -155,68 +143,67 @@ canvas:focus {
   pointer-events: none;
 }
 
-/* Controls hint */
-#controls {
+#startButton {
   position: absolute;
-  bottom: 20px;
+  top: 60%;
   left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 20px;
-  background: rgba(10, 11, 26, 0.7);
-  backdrop-filter: blur(10px);
-  padding: 10px 20px;
-  border-radius: 30px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 5;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translate(-50%, -50%);
+  background: rgba(5, 255, 161, 0.2);
+  color: #05ffa1;
+  border: 2px solid #05ffa1;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 20;
+  box-shadow: 0 0 15px rgba(5, 255, 161, 0.5);
 }
 
-#controls.fade-out {
-  opacity: 0;
-  transform: translateX(-50%) translateY(20px);
+#startButton:hover {
+  background: rgba(5, 255, 161, 0.4);
+  box-shadow: 0 0 25px rgba(5, 255, 161, 0.8);
 }
 
-.control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+.glow-button {
+  animation: glow 1.5s infinite alternate;
 }
 
-.key {
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px rgba(5, 255, 161, 0.5);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(5, 255, 161, 0.9), 0 0 30px rgba(5, 255, 161, 0.5);
+  }
 }
 
-/* Responsive design */
+/* Media queries for responsiveness */
 @media (max-width: 768px) {
-  canvas {
-    width: 90vw;
+  #app {
+    padding: 1rem;
+  }
+  
+  #gameCanvas {
+    width: 100%;
     height: auto;
   }
   
   #score, #lives {
-    font-size: 14px;
-    padding: 6px 12px;
+    font-size: 0.8rem;
   }
   
-  #gameOver {
-    width: 80%;
-    padding: 20px;
+  #gameOver h2 {
+    font-size: 1.5rem;
   }
   
-  #controls {
-    flex-direction: column;
-    gap: 10px;
-    bottom: 10px;
+  #finalScore {
+    font-size: 1rem;
+  }
+  
+  #startButton {
+    font-size: 1rem;
+    padding: 0.8rem 1.6rem;
   }
 }
